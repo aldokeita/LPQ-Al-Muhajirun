@@ -1,5 +1,5 @@
 
-import React, { lazy, Suspense, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BarChart3, BookOpen, CheckCircle as CheckCircleFull, ChevronDown, Edit, Mic, PlayCircle, Send, Star, Upload, Users, Video } from 'lucide-react';
@@ -48,7 +48,7 @@ import { resolveSantriLevel } from '@/lib/santriLevel';
 import AvatarPreviewDialog from '@/components/dashboard/shared/AvatarPreviewDialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-const SantriLevelScene = lazy(() => import('@/components/dashboard/santri/SantriLevelScene'));
+import SantriLevelScene from '@/components/dashboard/santri/SafeLevelScene';
 
 /**
  * SANTRI AUTHENTICATION FLOW DOCUMENTATION:
@@ -633,7 +633,7 @@ const SantriDashboard = ({ isAdult = false }) => {
             Dashboard Santri
         </h1>
         <section className="relative mb-8 overflow-hidden rounded-2xl border border-white/80 bg-slate-100 text-slate-900 shadow-[14px_14px_32px_rgba(15,23,42,0.16),-12px_-12px_28px_rgba(255,255,255,0.92)] dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-[14px_14px_32px_rgba(0,0,0,0.5),-10px_-10px_26px_rgba(30,41,59,0.3)]">
-          <Suspense fallback={null}><SantriLevelScene accentColor={levelInfo.accentColor} points={santriData.points} /></Suspense>
+          <SantriLevelScene accentColor={levelInfo.accentColor} points={santriData.points} />
           <div className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: levelInfo.accentColor }} />
           <div className="relative z-10 grid gap-7 p-5 sm:p-7 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center lg:p-8">
             <div className="flex justify-center lg:justify-start">
