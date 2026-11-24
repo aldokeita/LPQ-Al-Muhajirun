@@ -25,13 +25,14 @@
     "test:entry": "node --experimental-sqlite scripts/test-worker-entry.mjs migrations-d1/0001_initial_schema.sql",
     "test:files": "node --experimental-sqlite scripts/test-worker-files.mjs migrations-d1/0001_initial_schema.sql _private_reference/backup-2026-09-19-143019/d1-data.sql",
     "test:urls": "node --experimental-sqlite scripts/test-storage-url-rewrite.mjs migrations-d1/0001_initial_schema.sql _private_reference/backup-2026-09-19-143019/d1-data.sql",
-    "test:worker": "npm run test:shadow && npm run test:tier && npm run test:entry && npm run test:files && npm run test:urls && npm run test:triggers && npm run test:auth && npm run test:data && npm run test:mutate && npm run test:rpc && npm run test:rpc-transfer && npm run test:manage-user && npm run test:login && npm run test:password",
+    "test:worker": "npm run test:shadow && npm run test:tier && npm run test:entry && npm run test:files && npm run test:urls && npm run test:triggers && npm run test:auth && npm run test:data && npm run test:mutate && npm run test:rpc && npm run test:rpc-transfer && npm run test:manage-user && npm run test:login && npm run test:password && npm run test:assistant",
     "test:rpc": "node --experimental-sqlite scripts/test-worker-rpc.mjs migrations-d1/0001_initial_schema.sql _private_reference/backup-2026-09-19-143019/d1-data.sql",
     "test:triggers": "node --experimental-sqlite scripts/test-d1-triggers.mjs migrations-d1/0001_initial_schema.sql",
     "test:rpc-transfer": "node --experimental-sqlite scripts/test-worker-rpc-transfer.mjs migrations-d1/0001_initial_schema.sql _private_reference/backup-2026-09-19-143019/d1-data.sql",
     "test:adapter": "node --experimental-sqlite --import ./scripts/vite-alias-register.mjs scripts/test-frontend-adapter.mjs",
     "test:daily-recap": "node --import ./scripts/vite-alias-register.mjs scripts/test-daily-payment-recap.mjs && node --import ./scripts/vite-alias-register.mjs scripts/test-daily-payment-reports.mjs",
-    "test:manage-user": "node --experimental-sqlite scripts/test-worker-manage-user.mjs migrations-d1/0001_initial_schema.sql _private_reference/backup-2026-09-19-143019/d1-data.sql"
+    "test:manage-user": "node --experimental-sqlite scripts/test-worker-manage-user.mjs migrations-d1/0001_initial_schema.sql _private_reference/backup-2026-09-19-143019/d1-data.sql",
+    "test:assistant": "node --experimental-sqlite scripts/test-assistant.mjs migrations-d1/0001_initial_schema.sql _private_reference/backup-2026-09-19-143019/d1-data.sql migrations-d1/0003_assistant.sql"
   },
   "overrides": {
     "eslint-config-react-app": {
@@ -39,6 +40,7 @@
     }
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.13.0",
     "@emotion/is-prop-valid": "^1.3.1",
     "@radix-ui/react-accordion": "^1.2.13",
     "@radix-ui/react-alert-dialog": "^1.0.5",
