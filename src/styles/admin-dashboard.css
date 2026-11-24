@@ -3014,6 +3014,20 @@ body.lpq-admin-context [cmdk-item][data-selected="true"] {
   z-index: 1;
 }
 
+/* Baris badge prestasi di bawah identitas: lebar dan jarak bawahnya mengikuti baris identitas
+   supaya ruang di atas dan bawah badge seimbang. */
+.attendance-profile-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
+  width: 100%;
+  max-width: min(100%, 24rem);
+  margin: 0 auto 1.05rem;
+  position: relative;
+  z-index: 1;
+}
+
 /* Teksnya rata kiri terhadap pembatas, dan mengisi sisa lebar blok. */
 .attendance-profile-card__identity-text {
   display: flex;
@@ -3130,6 +3144,10 @@ body.lpq-admin-context [cmdk-item][data-selected="true"] {
 @media (max-width: 400px) {
   .attendance-profile-card__identity {
     gap: 0.65rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .attendance-profile-card__badges {
     margin-bottom: 0.9rem;
   }
 

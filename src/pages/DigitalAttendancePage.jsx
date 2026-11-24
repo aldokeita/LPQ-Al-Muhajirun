@@ -62,6 +62,7 @@ import {
 } from '@/lib/attendanceAdapters';
 import { resolveAvatarUrl } from '@/lib/storageAdapters';
 import AttendanceProfileCard from '@/components/dashboard/shared/AttendanceProfileCard';
+import { getSantriBadgeIds } from '@/lib/santriBadgeData';
 import { useAttendanceSessionConfiguration } from '@/hooks/useAttendanceSessionConfiguration';
 import { resolveSantriLevel } from '@/lib/santriLevel';
 
@@ -285,10 +286,10 @@ const loadMutationHistory = async () => {
 
 const getSantriLearningHighlights = async (santriId) => {
     if (!santriId) {
-        return { hafalanCount: 0, characterStrength: null, strongestHafalanCategory: null };
+        return { hafalanCount: 0, characterStrength: null, strongestHafalanCategory: null, badges: [] };
     }
 
-    const [progressResult, strengthResult] = await Promise.all([
+    const [progressResult, strengthResult, badges] = await Promise.all([
         query({
             table: 'hafalan_progress',
             columns: ['category', 'status', 'score', 'nilai'],
@@ -301,6 +302,7 @@ const getSantriLearningHighlights = async (santriId) => {
             filters: [{ column: 'santri_id', op: 'eq', value: santriId }],
             order: [{ column: 'selected_at', ascending: false }],
         }),
+        getSantriBadgeIds(santriId),
     ]);
 
     const rows = progressResult.error ? [] : (progressResult.data || []);
@@ -340,6 +342,7 @@ const getSantriLearningHighlights = async (santriId) => {
         hafalanCount,
         characterStrength: strengthResult.error ? null : (strengthResult.data?.strength_key || null),
         strongestHafalanCategory: strongest ? `${strongest.category} · ${averageLabel}` : null,
+        badges,
     };
 };
 
@@ -1253,6 +1256,7 @@ const DigitalAttendancePage = () => {
             hafalanCount={scan.hafalanCount}
             characterStrength={scan.characterStrength}
             strongestHafalanCategory={scan.strongestHafalanCategory}
+            badges={scan.badges}
             sesi={scan.sesi}
             message={scan.message}
             quote={scan.quote}
@@ -1280,6 +1284,7 @@ const DigitalAttendancePage = () => {
             hafalanCount={scan.hafalanCount}
             characterStrength={scan.characterStrength}
             strongestHafalanCategory={scan.strongestHafalanCategory}
+            badges={scan.badges}
             sesi={scan.sesi}
             message={scan.message}
             quote={scan.quote}

@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { getSessionName } from '@/utils/sessionMapping';
 import TierEmblem from '@/components/dashboard/shared/TierEmblem';
+import SantriAchievementBadge from '@/components/dashboard/shared/SantriAchievementBadge';
+import { getSantriBadgeById } from '@/lib/santriBadges';
 
 /**
  * AttendanceProfileCard — Shared premium profile card for attendance results.
@@ -41,6 +43,7 @@ const AttendanceProfileCard = ({
   hafalanCount,
   characterStrength,
   strongestHafalanCategory,
+  badges,
   jabatan,
   guruStats,
   quote,
@@ -63,6 +66,7 @@ const AttendanceProfileCard = ({
   const avatarDepth = clampDepth(avatarBorderThickness, 4);
   const statusConfig = getStatusConfig(status);
   const displayMessage = formatAttendanceMessage(message, sesi);
+  const badgeList = (Array.isArray(badges) ? badges : []).map(getSantriBadgeById).filter(Boolean);
   const nameGradient = pointAccent
     ? `linear-gradient(135deg, ${pointAccent.gradientStart}, ${pointAccent.gradientEnd})`
     : isTeacher
@@ -172,6 +176,12 @@ const AttendanceProfileCard = ({
         >
           {name}
         </h2>
+      )}
+
+      {!isTeacher && badgeList.length > 0 && (
+        <div role="list" aria-label="Badge prestasi santri" className="attendance-profile-card__badges">
+          {badgeList.map((badge) => <SantriAchievementBadge key={badge.id} badge={badge} size="sm" />)}
+        </div>
       )}
 
       {/* Subtitle */}
