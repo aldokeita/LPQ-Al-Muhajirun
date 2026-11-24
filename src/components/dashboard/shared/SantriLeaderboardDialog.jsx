@@ -5,6 +5,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ChevronLeft, ChevronRight, Loader2, Star, Trophy } from 'lucide-react';
 import { LEADERBOARD_PAGE_SIZE, fetchSantriLeaderboardPage } from '@/lib/santriLeaderboardAdapters';
 import { resolveAvatarUrl } from '@/lib/storageAdapters';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { cn } from '@/lib/utils';
+
+// Guru bisa beralih antara santri kelasnya dan seluruh santri; pilihan diingat di perangkat.
+const SCOPE_KEY = 'lpq.guru-leaderboard.scope';
+const SCOPES = [
+  { id: 'kelas', label: 'Kelas saya' },
+  { id: 'semua', label: 'Semua santri' },
+];
+const readScope = () => {
+  try { return window.localStorage.getItem(SCOPE_KEY) === 'semua' ? 'semua' : 'kelas'; } catch { return 'kelas'; }
+};
 
 /**
  * Papan peringkat poin seluruh santri, sepuluh per halaman.
@@ -14,6 +26,16 @@ import { resolveAvatarUrl } from '@/lib/storageAdapters';
  * melihat peringkat lalu kembali lagi.
  */
 const SantriLeaderboardDialog = ({ open, onOpenChange }) => {
+  const { role } = useAuth();
+  // Admin (dan kios) selalu melihat seluruh santri; pilihan cakupan hanya untuk guru.
+  const canChooseScope = role === 'guru';
+  const [scope, setScope] = useState(readScope);
+  const activeScope = canChooseScope ? scope : 'semua';
+  const chooseScope = (next) => {
+    setScope(next);
+    setHalaman(1);
+    try { window.localStorage.setItem(SCOPE_KEY, next); } catch { /* penyimpanan lokal tidak tersedia */ }
+  };
   const [halaman, setHalaman] = useState(1);
   const [data, setData] = useState(null);
   const [memuat, setMemuat] = useState(false);
@@ -23,7 +45,7 @@ const SantriLeaderboardDialog = ({ open, onOpenChange }) => {
     setMemuat(true);
     setGalat(null);
     try {
-      const hasil = await fetchSantriLeaderboardPage({ page: nomor, pageSize: LEADERBOARD_PAGE_SIZE });
+      const hasil = await fetchSantriLeaderboardPage({ page: nomor, pageSize: LEADERBOARD_PAGE_SIZE, scope: activeScope });
       // Avatar diresolusi per halaman, jadi yang dihitung hanya sepuluh baris
       // yang benar-benar tampil.
       const baris = await Promise.all(hasil.rows.map(async (santri) => ({
@@ -41,7 +63,7 @@ const SantriLeaderboardDialog = ({ open, onOpenChange }) => {
     } finally {
       setMemuat(false);
     }
-  }, []);
+  }, [activeScope]);
 
   useEffect(() => {
     if (!open) return;
@@ -66,10 +88,22 @@ const SantriLeaderboardDialog = ({ open, onOpenChange }) => {
           </DialogTitle>
           <DialogDescription>
             {data
-              ? `${data.total} santri aktif, diurutkan dari poin terbanyak.`
-              : 'Seluruh santri aktif, diurutkan dari poin terbanyak.'}
+              ? `${data.total} santri aktif${data.scope === 'kelas' ? ' di kelas Anda' : ''}, diurutkan dari poin terbanyak.`
+              : 'Santri aktif, diurutkan dari poin terbanyak.'}
           </DialogDescription>
         </DialogHeader>
+
+        {canChooseScope && (
+          <div className="inline-flex self-start rounded-full border border-border bg-muted/40 p-1" role="radiogroup" aria-label="Cakupan papan peringkat">
+            {SCOPES.map(({ id, label }) => (
+              <button key={id} type="button" role="radio" aria-checked={scope === id} onClick={() => chooseScope(id)}
+                className={cn('min-h-[40px] rounded-full px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  scope === id ? 'bg-primary text-primary-foreground shadow' : 'text-muted-foreground hover:bg-background')}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {galat ? (
           <div className="py-8 text-center">

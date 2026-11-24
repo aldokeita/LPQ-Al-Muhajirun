@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { Users, DollarSign, BookOpen, TrendingDown, BookUser, Fingerprint, LogIn, FileText, CalendarCheck, Tv, Gamepad2, PieChart, Settings, GraduationCap, Briefcase, Calendar, Calculator, Shuffle, Database, Library, FileSpreadsheet, CreditCard } from 'lucide-react';
+import { BellRing, Users, DollarSign, BookOpen, TrendingDown, BookUser, Fingerprint, LogIn, FileText, CalendarCheck, Tv, Gamepad2, PieChart, Settings, GraduationCap, Briefcase, Calendar, Calculator, Shuffle, Database, Library, FileSpreadsheet, CreditCard } from 'lucide-react';
 import SantriIdCardManagement from './admin/SantriIdCardManagement';
 import SantriManagement from './admin/SantriManagement';
 import SantriDewasaManagement from './admin/SantriDewasaManagement';
@@ -35,6 +35,7 @@ import AdminPageHeader from './shared/AdminPageHeader';
 import AdminStatCard from './shared/AdminStatCard';
 import AdminModuleNav from './shared/AdminModuleNav';
 import { resolveAvatarRecord } from '@/lib/storageAdapters';
+import AssistantSettings from './admin/AssistantSettings';
 
 const withTimeout = (promise, ms) => {
   const timeout = new Promise((_, reject) =>
@@ -162,6 +163,7 @@ const AdminDashboard = () => {
     { value: 'mmq', label: 'MMQ', icon: Library, group: 'akademik' },
     { value: 'salary', label: 'Bisyaroh', icon: Calculator, group: 'akademik' },
     { value: 'academic-calendar', label: 'Kalender', icon: Calendar, group: 'akademik' },
+    { value: 'asisten', label: 'Asisten', icon: BellRing, group: 'akademik' },
     { value: 'payment', label: 'Pembayaran', icon: DollarSign, group: 'keuangan' },
     { value: 'recap', label: 'Rekap Pembayaran', icon: PieChart, group: 'keuangan' },
     { value: 'history', label: 'Riwayat Bayar', icon: FileText, group: 'keuangan' },
@@ -345,6 +347,7 @@ const AdminDashboard = () => {
             <TabsContent value="mmq"><MMQManagement /></TabsContent>
             <TabsContent value="salary"><SalaryCalculation /></TabsContent>
             <TabsContent value="academic-calendar"><CalendarManagement /></TabsContent>
+            <TabsContent value="asisten"><AssistantSettings /></TabsContent>
             <TabsContent value="payment"><PaymentSystem /></TabsContent>
             <TabsContent value="expense"><ExpenseManagement /></TabsContent>
             <TabsContent value="tv-settings"><TvDisplaySettings /></TabsContent>

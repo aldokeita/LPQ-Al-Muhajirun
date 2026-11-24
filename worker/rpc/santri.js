@@ -71,7 +71,7 @@ const INT32_MAX = 2147483647;
 const LEADERBOARD_MAX_PAGE_SIZE = 50;
 const LEADERBOARD_ROLES = new Set(['admin', 'guru', 'pentashih']);
 
-export const getSantriLeaderboard = async (db, ctx, { page, pageSize }) => {
+export const getSantriLeaderboard = async (db, ctx, { page, pageSize, scope }) => {
   requireActor(ctx, 'melihat papan peringkat');
   const role = await currentUserRole(ctx);
 
@@ -97,9 +97,15 @@ export const getSantriLeaderboard = async (db, ctx, { page, pageSize }) => {
   const halaman = Math.max(Number.isInteger(page) ? page : 1, 1);
   const offset = (halaman - 1) * ukuran;
 
-  const where = 'where "deleted_at" is null and lower(trim("status")) in (\'aktif\', \'active\')';
+  // Guru boleh mempersempit ke santri kelas yang ia ampu ("Kelas saya"); admin selalu melihat semua.
+  const kelasSaja = role === 'guru' && scope === 'kelas';
+  const where = `where "deleted_at" is null and lower(trim("status")) in ('aktif', 'active')${kelasSaja ? `
+      and "id" in (select cm."santri_id" from "class_memberships" cm
+                     join "classes" c on c."id" = cm."class_id"
+                    where cm."status" = 'active' and c."id_guru" = ? and c."deleted_at" is null)` : ''}`;
+  const whereParams = kelasSaja ? [ctx.userId] : [];
 
-  const total = await db.prepare(`select count(*) as n from "santri" ${where}`).first();
+  const total = await db.prepare(`select count(*) as n from "santri" ${where}`).bind(...whereParams).first();
 
   // Nama dipakai sebagai pemecah seri supaya urutannya tidak berubah-ubah antar
   // permintaan ketika poinnya sama — tanpa itu, paginasi bisa melewatkan atau
@@ -112,7 +118,7 @@ export const getSantriLeaderboard = async (db, ctx, { page, pageSize }) => {
         order by "points" desc, "nama_lengkap" asc
         limit ? offset ?`,
     )
-    .bind(ukuran, offset)
+    .bind(...whereParams, ukuran, offset)
     .all();
 
   const jumlah = Number(total?.n ?? 0);
@@ -123,6 +129,7 @@ export const getSantriLeaderboard = async (db, ctx, { page, pageSize }) => {
     pageSize: ukuran,
     totalPages: Math.max(1, Math.ceil(jumlah / ukuran)),
     startRank: offset + 1,
+    scope: kelasSaja ? 'kelas' : 'semua',
   };
 };
 

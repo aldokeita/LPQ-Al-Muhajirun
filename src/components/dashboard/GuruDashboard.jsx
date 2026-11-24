@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -58,6 +58,9 @@ import { SANTRI_JILID_OPTIONS, normalizeSantriJilid } from '@/lib/santriJilid';
 import { changeSantriJilid } from '@/lib/santriJilidAdapters';
 
 import ProfileConstellationScene from '@/components/dashboard/santri/SafeLevelScene';
+
+const AttentionPanel = lazy(() => import('@/components/dashboard/assistant/AttentionPanel'));
+const AiWorkspace = lazy(() => import('@/components/dashboard/assistant/AiWorkspace'));
 
 const jilidOptions = SANTRI_JILID_OPTIONS;
 
@@ -198,6 +201,9 @@ const GuruDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', description: '', onConfirm: () => {} });
   const [isBirthdayModalOpen, setIsBirthdayModalOpen] = useState(false);
+  // Dinaikkan setiap ada perubahan data santri agar panel Perlu Perhatian langsung dimuat ulang.
+  const [attentionRefreshKey, setAttentionRefreshKey] = useState(0);
+  const refreshAttention = () => setAttentionRefreshKey((k) => k + 1);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isJilidModalOpen, setIsJilidModalOpen] = useState(false);
   const [jilidChangeData, setJilidChangeData] = useState(null);
@@ -331,6 +337,7 @@ const GuruDashboard = () => {
 
     try {
         await upsertHafalanProgress({ santriId: selectedSantri.id, item: { ...item, category, item_name: itemName }, score, userId: user.id });
+        refreshAttention();
 
         toast({
             title: score === 4 ? "Hafalan Tercapai" : "Skor Hafalan Tersimpan",
@@ -405,6 +412,7 @@ const GuruDashboard = () => {
     if (!currentSubmission) return;
     try {
       await updateMurojaahReview({ id: currentSubmission.id, status: 'diterima', feedback, userId: user.id });
+      refreshAttention();
       toast({ title: 'Berhasil', description: 'Umpan balik telah disimpan.' });
       setIsMurojaahOpen(false);
       setCurrentSubmission(null);
@@ -436,6 +444,17 @@ const GuruDashboard = () => {
 
   const pendingSubmissionsCount = useMemo(() => murojaahSubmissions.filter(sub => sub.status === 'menunggu').length, [murojaahSubmissions]);
   const allMySantri = useMemo(() => myClasses.flatMap(c => c.santri), [myClasses]);
+  const findMySantri = (santriId) => allMySantri.find((s) => s.id === santriId);
+  // Aksi dari panel "Perlu Perhatian" memakai modal yang sudah ada di dasbor ini.
+  const attentionActions = {
+    onOpenDetail: (santriId) => { const santri = findMySantri(santriId); if (santri) openDetailModal(santri); },
+    onOpenHafalan: (santriId, category) => { const santri = findMySantri(santriId); if (santri) openHafalanModal(santri, category); },
+    onOpenMurojaah: () => setIsMurojaahOpen(true),
+    onJilidChanged: (santriId, toJilid) => setMyClasses((prev) => prev.map((cls) => ({
+      ...cls,
+      santri: cls.santri.map((s) => (s.id === santriId ? { ...s, jilid: toJilid } : s)),
+    }))),
+  };
   const birthdayStudentsThisMonth = useMemo(() => getBirthdaysThisMonth(allMySantri), [allMySantri]);
   const categories = [...new Set(hafalanItems.map(i => i.category))];
   const filteredManualItems = hafalanItems.filter(i => i.category === manualMurojaahForm.category).map(i => i.item_name);
@@ -471,6 +490,7 @@ const GuruDashboard = () => {
       });
       if (updateError) { toast({ title: 'Gagal!', description: updateError.message, variant: 'destructive' }); return; }
       toast({ title: 'Berhasil!', description: `Jilid santri diubah ke ${nextJilid}.` });
+      refreshAttention();
       setMyClasses(prev => prev.map(cls => ({ ...cls, santri: cls.santri.map(s => s.id === santri.id ? {...s, jilid: nextJilid} : s) })));
       setIsJilidModalOpen(false); setJilidChangeData(null);
   };
@@ -572,6 +592,8 @@ const GuruDashboard = () => {
             </div>
           </section>
         )}
+        <Suspense fallback={null}><AttentionPanel variant="guru" refreshKey={attentionRefreshKey} actions={attentionActions} guruName={guruData?.nama} /></Suspense>
+        <Suspense fallback={null}><AiWorkspace guruName={guruData?.nama} /></Suspense>
         <div className="space-y-8">
             {myClasses.map(cls => (
                 <Card key={cls.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/50">
@@ -938,7 +960,7 @@ const GuruDashboard = () => {
         santri={transferSantri}
         onTransferSuccess={fetchGuruData}
       />
-      <BirthdayNotificationModal isOpen={isBirthdayModalOpen} onClose={() => setIsBirthdayModalOpen(false)} students={allMySantri} />
+      <BirthdayNotificationModal isOpen={isBirthdayModalOpen} onClose={() => setIsBirthdayModalOpen(false)} students={allMySantri} senderName={guruData?.nama} />
       <ConfirmationDialog isOpen={confirmDialog.isOpen} onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })} onConfirm={confirmDialog.onConfirm} title={confirmDialog.title} description={confirmDialog.description} variant={confirmDialog.variant || "destructive"} confirmText={confirmDialog.confirmText || "Ya, Lanjutkan"} />
       <JilidChangeModal isOpen={isJilidModalOpen} onClose={() => setIsJilidModalOpen(false)} onConfirm={confirmJilidChange} {...jilidChangeData} kategori="Anak" />
       <SantriLeaderboardDialog open={isLeaderboardOpen} onOpenChange={setIsLeaderboardOpen} />

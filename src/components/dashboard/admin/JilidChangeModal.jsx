@@ -11,7 +11,7 @@ import { fetchWhatsAppTemplates, renderWhatsAppTemplate } from '@/lib/whatsappTe
 import { fetchWhatsAppGroupLinks, getWhatsAppGroupLink } from '@/lib/whatsappGroupLinkAdapters';
 import { SANTRI_PTPT_LABEL } from '@/lib/santriJilid';
 
-const JilidChangeModal = ({ isOpen, onClose, santri, direction, currentJilid, nextJilid, onConfirm, kategori = 'Anak' }) => {
+const JilidChangeModal = ({ isOpen, onClose, santri, direction, currentJilid, nextJilid, onConfirm, kategori = 'Anak', isSaving = false }) => {
     const [message, setMessage] = useState('');
     const [hasSiblings, setHasSiblings] = useState(false);
     const [isLoadingLink, setIsLoadingLink] = useState(false);
@@ -121,7 +121,7 @@ const JilidChangeModal = ({ isOpen, onClose, santri, direction, currentJilid, ne
                         <MessageCircle className="w-4 h-4 mr-2"/>
                         {santri?.no_hp_ortu ? 'Kirim WA' : 'No. HP Kosong'}
                     </Button>
-                    <Button onClick={onConfirm} className="w-full sm:w-auto">
+                    <Button onClick={onConfirm} disabled={isSaving} aria-busy={isSaving} className="w-full sm:w-auto">
                         <Check className="w-4 h-4 mr-2"/>
                         Konfirmasi & Simpan
                     </Button>

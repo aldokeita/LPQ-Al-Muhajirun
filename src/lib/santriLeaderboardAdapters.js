@@ -14,13 +14,15 @@ import { rpc } from '@/lib/dataClient';
 
 export const LEADERBOARD_PAGE_SIZE = 10;
 
-export const fetchSantriLeaderboardPage = async ({ page = 1, pageSize = LEADERBOARD_PAGE_SIZE } = {}) => {
+// scope 'kelas' mempersempit ke santri kelas yang diampu guru; diabaikan untuk admin.
+export const fetchSantriLeaderboardPage = async ({ page = 1, pageSize = LEADERBOARD_PAGE_SIZE, scope = null } = {}) => {
   const halaman = Math.max(1, Number(page) || 1);
   const ukuran = Math.max(1, Number(pageSize) || LEADERBOARD_PAGE_SIZE);
 
   const { data, error } = await rpc('get_santri_leaderboard', {
     p_page: halaman,
     p_page_size: ukuran,
+    ...(scope ? { p_scope: scope } : {}),
   });
 
   if (error) throw error;
@@ -33,5 +35,6 @@ export const fetchSantriLeaderboardPage = async ({ page = 1, pageSize = LEADERBO
     totalPages: Math.max(1, Number(data?.totalPages ?? 1)),
     // Peringkat dihitung dari offset supaya nomornya berlanjut antar halaman.
     startRank: Number(data?.startRank ?? (halaman - 1) * ukuran + 1),
+    scope: data?.scope || 'semua',
   };
 };

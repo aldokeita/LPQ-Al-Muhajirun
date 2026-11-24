@@ -1,0 +1,207 @@
+// Data untuk kartu santri yang dibagikan ke wali: apresiasi kenaikan jilid dan profil kehadiran & hafalan.
+// Semua data sudah dibaca sesuai hak guru (RLS); di sini hanya dirapikan untuk tampilan kartu.
+
+const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+export const formatTanggal = (date) => {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`;
+};
+
+export const formatBulan = (date) => {
+  const d = date instanceof Date ? date : new Date(date);
+  return Number.isNaN(d.getTime()) ? '' : `${BULAN[d.getMonth()]} ${d.getFullYear()}`;
+};
+
+export const panggilanOf = (profile) => String(profile?.nama_panggilan || '').trim()
+  || String(profile?.nama_lengkap || 'Ananda').trim().split(/\s+/)[0];
+
+export const fillPesan = (text, { nama, ke, usia, shalih } = {}) => String(text || '')
+  .replace(/\{nama\}/g, nama || 'Ananda')
+  .replace(/\{ke\}/g, ke || 'jilid berikutnya')
+  .replace(/\{usia\}/g, usia ? String(usia) : '')
+  .replace(/\{shalih\}/g, shalih || 'shalih/shalihah');
+
+export const DEFAULT_PESAN = {
+  jilid: 'Alhamdulillah, {nama} telah naik ke {ke}. Terima kasih atas ketekunan dan semangatnya. Semoga Allah memudahkan langkah berikutnya dalam belajar Al-Qur\'an.',
+  profil: 'Terus semangat mengaji, {nama}! Pertahankan kehadiran dan ulangi hafalan bersama Ayah dan Bunda di rumah.',
+  ultah: 'Selamat milad, {nama}! Semoga Allah memberkahi umurmu, menjadikanmu anak {shalih} yang cinta Al-Qur\'an, dan berbakti kepada Ayah dan Bunda. Aamiin.',
+};
+
+// Caption siap posting (Instagram/WhatsApp). Isi bisa ditulis guru atau AI; tagar dan akun lembaga
+// selalu ditambahkan di akhir. Nama memakai panggilan agar data pribadi anak tidak tersebar.
+export const CAPTION_FOOTER = '#LPQAlMuhajirun #MetodeQiroati #BelajarAlQuran #Baturaja\n📍 LPQ Al-Muhajirun';
+
+export const DEFAULT_CAPTION = {
+  jilid: 'Alhamdulillah, selamat untuk ananda {nama} yang telah naik ke {ke}! 🎉\n\nTerima kasih atas ketekunannya, dan terima kasih Ayah Bunda atas dukungannya. Semoga Allah mudahkan langkah berikutnya dalam belajar Al-Qur\'an. 🤲',
+  profil: 'Perkembangan belajar ananda {nama} bulan {bulan} 📖\n\nTerus semangat mengaji, dan ulangi hafalan bersama Ayah dan Bunda di rumah. Semoga Allah mudahkan. 🤲',
+  ultah: 'Barakallahu fii umrik, ananda {nama}! 🎉🎂\n\nSemoga Allah memberkahi usiamu, menjadikanmu anak {shalih} yang cinta Al-Qur\'an, dan menjadi penyejuk hati Ayah dan Bunda. Aamiin. 🤲',
+};
+
+export const fillCaption = (body, { nama, ke, bulan, shalih } = {}) => {
+  const text = String(body || '')
+    .replace(/\{nama\}/g, nama || 'Ananda')
+    .replace(/\{ke\}/g, ke || 'jilid berikutnya')
+    .replace(/\{shalih\}/g, shalih || 'shalih/shalihah')
+    .replace(/\{bulan\}/g, bulan || '')
+    .trim();
+  return text ? `${text}\n\n${CAPTION_FOOTER}` : CAPTION_FOOTER;
+};
+
+const daysAgo = (today, days) => {
+  const d = new Date(today);
+  d.setDate(d.getDate() - (Number(days) || 0));
+  return d;
+};
+
+// Kartu apresiasi kenaikan jilid. Memakai riwayat kenaikan terakhir; tanpa riwayat, jilid saat ini.
+export const buildJilidCard = (profile, { today = new Date() } = {}) => {
+  if (!profile) return null;
+  const last = (profile.riwayat_jilid || [])[0] || null;
+  const ke = last?.ke || profile.jilid || '';
+  return {
+    namaLengkap: String(profile.nama_lengkap || '').trim(),
+    panggilan: panggilanOf(profile),
+    dari: last?.dari || null,
+    ke,
+    tanggal: formatTanggal(last ? daysAgo(today, last.hari_lalu) : today),
+    adaRiwayat: Boolean(last),
+    hariLalu: last ? Number(last.hari_lalu) : null,
+  };
+};
+
+const scoreOf = (value) => (value === null || value === undefined || value === '' ? null : Number(value));
+
+// Kehadiran bulanan dari get_assistant_santri_month_attendance; tanpa data bulanan memakai snapshot 4 pekan.
+const buildKehadiran = (bulanan, snapshot, today) => {
+  if (bulanan && Array.isArray(bulanan.sesi)) {
+    const hadir = Number(bulanan.hadir) || 0;
+    const total = Number(bulanan.total) || 0;
+    return {
+      judul: `Kehadiran ${formatBulan(bulanan.bulan ? `${bulanan.bulan}T00:00:00` : today)}`,
+      hadir,
+      total,
+      persen: total > 0 ? Math.round((hadir / total) * 100) : null,
+      sesi: bulanan.sesi.map((x) => ({ s: x.s, tgl: Number(String(x.t || '').slice(8, 10)) || null })),
+    };
+  }
+  const hadir4 = Number(snapshot?.hadir_4pekan ?? NaN);
+  const total4 = Number(snapshot?.sesi_4pekan ?? NaN);
+  const sesi = Array.isArray(snapshot?.sesi_terakhir) ? snapshot.sesi_terakhir : [];
+  return {
+    judul: 'Kehadiran 4 pekan',
+    hadir: Number.isFinite(hadir4) ? hadir4 : null,
+    total: Number.isFinite(total4) ? total4 : null,
+    persen: Number.isFinite(hadir4) && total4 > 0 ? Math.round((hadir4 / total4) * 100) : null,
+    sesi: sesi.slice(-10).map((x) => ({ s: x.s, tgl: Number(String(x.t || '').slice(8, 10)) || null })),
+  };
+};
+
+// Kartu profil: kehadiran sebulan (per sesi), dan hafalan (sudah hafal, dilatih, belum dinilai).
+export const buildProfilCard = (profile, snapshot, { today = new Date(), bulanan = null } = {}) => {
+  if (!profile) return null;
+  const progress = (profile.hafalan || []).map((h) => ({ ...h, skor: scoreOf(h.skor) }));
+  const wajib = (profile.hafalan_wajib_jilid || []).map((w) => ({ ...w, skor: scoreOf(w.skor) }));
+
+  const sudahHafal = progress.filter((h) => h.skor === 4).map((h) => h.materi).filter(Boolean);
+  const dilatih = progress.filter((h) => h.skor !== null && h.skor < 4)
+    .sort((a, b) => b.skor - a.skor)
+    .map((h) => ({ materi: h.materi, skor: h.skor }));
+  const wajibTotal = wajib.length || Number(snapshot?.hafalan?.total || 0);
+  const wajibAman = wajib.length ? wajib.filter((w) => w.skor === 4).length : Number(snapshot?.hafalan?.lulus || 0);
+
+  return {
+    namaLengkap: String(profile.nama_lengkap || '').trim(),
+    panggilan: panggilanOf(profile),
+    jilid: profile.jilid || snapshot?.jilid || '',
+    poin: Number(profile.poin || 0),
+    bulan: formatBulan(today),
+    tanggal: formatTanggal(today),
+    kehadiran: buildKehadiran(bulanan, snapshot, today),
+    hafalan: {
+      wajibTotal,
+      wajibAman,
+      persen: wajibTotal > 0 ? Math.round((wajibAman / wajibTotal) * 100) : null,
+      sudahHafal,
+      dilatih,
+      belumDinilai: wajib.filter((w) => w.skor === null).length,
+      belumDinilaiList: wajib.filter((w) => w.skor === null).map((w) => w.materi).filter(Boolean),
+    },
+  };
+};
+
+// Kartu ucapan ulang tahun. Usia dari profil bisa ditimpa guru (mis. kartu dibuat sebelum hari lahirnya).
+export const isPutri = (profile) => /^(perempuan|p|putri)$/i.test(String(profile?.jenis_kelamin || '').trim());
+
+// Ulang tahun berikutnya dari profil (ultah_berikut = 'YYYY-MM-DD', hari ini terhitung).
+export const upcomingBirthday = (profile, today = new Date()) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(profile?.ultah_berikut || ''));
+  if (!match) return null;
+  const [y, m, d] = match.slice(1).map(Number);
+  const hariLagi = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000);
+  const usia = Number(profile.usia_ultah_berikut);
+  return { hariLagi, usia: Number.isInteger(usia) && usia > 0 ? usia : null, tanggal: formatTanggal(new Date(y, m - 1, d)) };
+};
+
+// Profil ulang tahun dari baris santri biasa (tanpa RPC asisten): usia sekarang, ulang tahun berikutnya
+// (hari ini terhitung), dan usia pada hari itu. 29 Februari jatuh pada 28 Februari di tahun biasa.
+export const birthdayProfileFromSantri = (santri, today = new Date()) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(santri?.tanggal_lahir || ''));
+  const base = {
+    nama_lengkap: santri?.nama_lengkap || santri?.nama || '',
+    nama_panggilan: santri?.nama_panggilan || '',
+    jenis_kelamin: santri?.jenis_kelamin || '',
+  };
+  if (!match) return { ...base, usia: null, ultah_berikut: null, usia_ultah_berikut: null };
+  const [by, bm, bd] = match.slice(1).map(Number);
+  const onYear = (year) => new Date(year, bm - 1, Math.min(bd, new Date(year, bm, 0).getDate()));
+  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  let next = onYear(t.getFullYear());
+  if (next < t) next = onYear(t.getFullYear() + 1);
+  const usiaBerikut = next.getFullYear() - by;
+  const pad = (n) => String(n).padStart(2, '0');
+  return {
+    ...base,
+    usia: next.getTime() === t.getTime() ? usiaBerikut : usiaBerikut - 1,
+    ultah_berikut: `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`,
+    usia_ultah_berikut: usiaBerikut,
+  };
+};
+
+// Kartu boleh dikirim sebelum hari H: bila ulang tahun tinggal ≤ 60 hari, pakai usia yang akan dicapai.
+export const ULTAH_EARLY_DAYS = 60;
+export const defaultUltahUsia = (profile, today = new Date()) => {
+  const next = upcomingBirthday(profile, today);
+  if (next && next.usia && next.hariLagi >= 0 && next.hariLagi <= ULTAH_EARLY_DAYS) return next.usia;
+  const current = Number(profile?.usia);
+  return Number.isInteger(current) && current > 0 ? current : null;
+};
+
+export const buildUltahCard = (profile, { today = new Date(), usia } = {}) => {
+  if (!profile) return null;
+  const putri = isPutri(profile);
+  const known = /^(laki-laki|l|putra|perempuan|p|putri)$/i.test(String(profile.jenis_kelamin || '').trim());
+  const age = Number(usia ?? defaultUltahUsia(profile, today));
+  return {
+    namaLengkap: String(profile.nama_lengkap || '').trim(),
+    panggilan: panggilanOf(profile),
+    usia: Number.isInteger(age) && age > 0 && age < 120 ? age : null,
+    tanggal: formatTanggal(today),
+    putri,
+    shalih: known ? (putri ? 'shalihah' : 'shalih') : 'shalih/shalihah',
+    // Doa "semoga Allah memberkahi umurmu" dengan akhiran sesuai jenis kelamin.
+    doa: known ? (putri ? 'بَارَكَ اللهُ فِي عُمْرِكِ' : 'بَارَكَ اللهُ فِي عُمْرِكَ') : 'بَارَكَ اللهُ فِي عُمْرِك',
+  };
+};
+
+// Batasi daftar chip agar kartu tetap rapi: tampilkan n pertama dan sisanya sebagai "+x lainnya".
+export const limitList = (list = [], n = 10) => ({ shown: list.slice(0, n), more: Math.max(0, list.length - n) });
+
+export const cardFileName = (jenis, nama, tanggal = new Date()) => {
+  const slug = String(nama || 'santri').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'santri';
+  const d = tanggal instanceof Date ? tanggal : new Date(tanggal);
+  const stamp = Number.isNaN(d.getTime()) ? '' : `-${d.toISOString().slice(0, 10)}`;
+  const label = { jilid: 'naik-jilid', ultah: 'ulang-tahun' }[jenis] || 'profil';
+  return `kartu-${label}-${slug}${stamp}.png`;
+};
