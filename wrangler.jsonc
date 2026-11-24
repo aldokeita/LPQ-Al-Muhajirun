@@ -46,6 +46,11 @@
     }
   ],
 
+  // Aturan asisten "Perlu Perhatian" setiap malam pukul 23:30 WIB (worker/index.js scheduled).
+  "triggers": {
+    "crons": ["30 16 * * *"]
+  },
+
   "observability": {
     "enabled": true
   }

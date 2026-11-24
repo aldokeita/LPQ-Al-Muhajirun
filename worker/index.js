@@ -12,6 +12,8 @@ import { handleData } from './routes/data.js';
 import { handleRpc } from './routes/rpc.js';
 import { handleManageUser, handleResetPassword } from './routes/manage-user.js';
 import { handleFiles } from './routes/files.js';
+import { runAssistantRules } from './assistant/rules.js';
+import { jakartaToday } from './assistant/dates.js';
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -92,5 +94,15 @@ export default {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/')) return handleApi(request, env, url);
     return env.ASSETS.fetch(request);
+  },
+
+  // Cron harian 16:30 UTC (23:30 WIB): aturan asisten "Perlu Perhatian" memeriksa hari ini,
+  // sama dengan jadwal pg_cron di versi asalnya. Aturan pekanan ikut berjalan pada hari Jumat.
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(
+      runAssistantRules(env.DB, { ref: jakartaToday(controller.scheduledTime) })
+        .then((result) => console.log('[asisten] aturan harian:', JSON.stringify(result)))
+        .catch((error) => console.error('[asisten] aturan harian gagal:', error.message)),
+    );
   },
 };
