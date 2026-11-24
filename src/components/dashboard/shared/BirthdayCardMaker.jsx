@@ -45,9 +45,9 @@ const BirthdayCardMaker = ({ santri, senderName, onBack }) => {
   useEffect(() => {
     let active = true;
     setAvatar(null);
-    loadAvatar(santri.id).then((url) => { if (active) setAvatar(url); }).catch(() => {});
+    loadAvatar({ santriId: santri.id, avatarPath: santri.avatar_path, fotoUrl: santri.foto_url }).then((url) => { if (active) setAvatar(url); }).catch(() => {});
     return () => { active = false; };
-  }, [santri.id]);
+  }, [santri.id, santri.avatar_path, santri.foto_url]);
 
   const chooseDesign = (id) => {
     setDesign(id);

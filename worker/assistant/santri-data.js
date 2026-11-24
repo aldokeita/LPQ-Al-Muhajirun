@@ -221,6 +221,7 @@ export const nextBirthday = (birth, today) => {
 
 const PROFILE_SQL = (key) => `
 select s."id" as santri_id, s."nama_lengkap", s."nama_panggilan", s."jenis_kelamin", s."tanggal_lahir", s."jilid", s."points",
+  s."avatar_path", s."foto_url",
   (select json_group_array(json_object('dari', h."from_jilid", 'ke', h."to_jilid",
             'hari_lalu', cast(julianday(?) - julianday(date(h."changed_at", '+7 hours')) as integer)))
      from (select * from "jilid_history" where "santri_id" = s."id" order by "changed_at" desc limit 6) h) as riwayat_jilid,
@@ -267,6 +268,9 @@ export const loadProfile = async (db, scope, santriId) => {
     ultah_berikut: birthday,
     usia_ultah_berikut: birthday ? Number(birthday.slice(0, 4)) - Number(row.tanggal_lahir.slice(0, 4)) : null,
     jilid: row.jilid,
+    // Hanya untuk foto kartu santri; tidak ikut dikirim ke penyedia AI (buildProfileContext memilih kolomnya sendiri).
+    avatar_path: row.avatar_path || null,
+    foto_url: row.foto_url || null,
     poin: Math.round((Number(row.points) || 0) * 10) / 10,
     riwayat_jilid: parseJson(row.riwayat_jilid, []),
     hafalan: parseJson(row.hafalan, []),

@@ -79,12 +79,14 @@ const CardStudio = ({ roster, guruName, aiEnabled = true, focusSantriId }) => {
     setAvatar(null);
     setBulanan(null);
     Promise.all([
-      fetchSantriProfile(santriId),
+      // Foto dimuat setelah profil, karena path fotonya ada di profil.
+      fetchSantriProfile(santriId).then(async (p) => [p, p
+        ? await loadAvatar({ santriId, avatarPath: p.avatar_path, fotoUrl: p.foto_url }).catch(() => null)
+        : null]),
       fetchSantriSnapshots([santriId]),
-      loadAvatar(santriId).catch(() => null),
       fetchSantriMonthAttendance(santriId).catch(() => null),
     ])
-      .then(([p, snaps, foto, bulan]) => {
+      .then(([[p, foto], snaps, bulan]) => {
         if (!active) return;
         if (!p) throw new Error('Data santri tidak tersedia (mode senyap aktif atau akses ditolak).');
         setProfile(p);

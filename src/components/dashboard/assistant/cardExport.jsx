@@ -42,9 +42,10 @@ export const ScaledPreview = ({ children }) => {
   );
 };
 
-// Foto santri dibaca sebagai data URL agar ikut tergambar saat kartu diekspor ke PNG.
-export const loadAvatar = async (santriId) => {
-  const url = await resolveAvatarUrl({ ownerType: 'santri', ownerId: santriId });
+// Foto santri dibaca sebagai data URL agar ikut tergambar saat kartu diekspor ke PNG. Di sini foto
+// disimpan di R2 menurut avatar_path, jadi path itu (atau foto_url lama) harus ikut dikirim.
+export const loadAvatar = async ({ santriId, avatarPath, fotoUrl } = {}) => {
+  const url = await resolveAvatarUrl({ ownerType: 'santri', ownerId: santriId, avatarPath, fallbackUrl: fotoUrl });
   if (!url) return null;
   const res = await fetch(url);
   if (!res.ok) return null;

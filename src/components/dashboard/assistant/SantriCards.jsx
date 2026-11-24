@@ -199,7 +199,14 @@ export const JilidCard = React.forwardRef(({ data, pesan, guru, avatar }, ref) =
 JilidCard.displayName = 'JilidCard';
 
 // Nomor jilid tanpa kata "Jilid" untuk tipografi besar ("Jilid 3" → "3").
-const jilidMark = (ke) => String(ke || '').replace(/^jilid\s*/i, '').trim() || String(ke || '');
+// Tanda besar di latar kartu biru. Hanya kode jilid pendek (1A, 5B, 6) dan Juz 27 yang ditulis besar;
+// tingkat bernama panjang (Ghorib Tajwid, Al-Qur'an, Finishing, Pra TK A) terlipat dan menimpa teks lain,
+// jadi diganti ornamen bintang delapan. Nama tingkatnya tetap tertulis utuh di bawah "Selamat, kini di".
+const jilidMark = (ke) => {
+  const code = String(ke || '').replace(/^jilid\s*/i, '').trim();
+  if (/^juz\s*\d+$/i.test(code)) return code.replace(/^juz\s*/i, '');
+  return code.length > 0 && code.length <= 3 ? code : null;
+};
 
 // Pil "dari → ke" yang dipakai kedua varian terang.
 const JilidStep = ({ dari, ke, muted, arrow, chipBg, chipText, border, bg }) => (
@@ -235,10 +242,21 @@ export const JilidCardBiru = React.forwardRef(({ data, pesan, guru, avatar }, re
       <Blob style={{ width: 300, height: 300, top: -110, left: -90, background: 'rgba(125,211,252,0.35)' }} />
       <div aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, width: CARD_W, height: 318, overflow: 'hidden' }}>
         <StarPattern id="star-jilid-biru" color="#ffffff" opacity={0.05} />
-        <div style={{ position: 'absolute', right: 26, top: 74, fontFamily: SANS, fontWeight: 900, lineHeight: 1, letterSpacing: 0,
-          fontSize: mark.length > 3 ? 92 : mark.length > 1 ? 150 : 190, color: 'rgba(255,255,255,0.92)', textShadow: '0 4px 0 rgba(29,78,216,0.55), 0 10px 30px rgba(11,31,77,0.55)' }}>
-          {mark}
-        </div>
+        {mark ? (
+          <div style={{ position: 'absolute', right: 26, top: 74, fontFamily: SANS, fontWeight: 900, lineHeight: 1, letterSpacing: 0, whiteSpace: 'nowrap',
+            fontSize: mark.length > 1 ? 150 : 190, color: 'rgba(255,255,255,0.92)', textShadow: '0 4px 0 rgba(29,78,216,0.55), 0 10px 30px rgba(11,31,77,0.55)' }}>
+            {mark}
+          </div>
+        ) : (
+          // Bintang delapan (rub el hizb) dari dua persegi; SVG agar sama di semua perangkat dan saat diekspor.
+          <svg width="160" height="160" viewBox="-60 -60 120 120" style={{ position: 'absolute', right: 40, top: 84, opacity: 0.5 }}>
+            {[0, 45].map((deg) => (
+              <rect key={deg} x="-38" y="-38" width="76" height="76" transform={`rotate(${deg})`}
+                fill="none" stroke="#ffffff" strokeWidth="5" strokeLinejoin="round" />
+            ))}
+            <circle r="15" fill="none" stroke="#fde68a" strokeWidth="5" />
+          </svg>
+        )}
       </div>
       <Confetti dots={[[62, 236, 8, '#fde68a', 45], [118, 268, 6, '#ffffff', 'round'], [420, 250, 9, '#7dd3fc', 20], [470, 210, 6, '#fde68a', 'round'], [196, 232, 5, '#bae6fd', 'round']]} />
 
