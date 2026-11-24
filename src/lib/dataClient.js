@@ -31,7 +31,8 @@ const request = async (path, body) => {
 
   if (!response.ok) {
     const error = new Error(payload?.message ?? 'Permintaan gagal.');
-    error.code = payload?.error ?? 'request_failed';
+    // RPC asisten menyertakan kode galat mesin (mis. AI_DAILY_LIMIT) di samping jenis galatnya.
+    error.code = payload?.code ?? payload?.error ?? 'request_failed';
     error.status = response.status;
     return { data: null, error };
   }
