@@ -20,7 +20,7 @@ const HANDLERS = {
   remove_santri_from_class: (db, ctx, body) =>
     removeSantriFromClass(db, ctx, { santriId: body?.p_santri_id, reason: body?.p_reason }),
   get_santri_leaderboard: (db, ctx, body) =>
-    getSantriLeaderboard(db, ctx, { page: body?.p_page, pageSize: body?.p_page_size }),
+    getSantriLeaderboard(db, ctx, { page: body?.p_page, pageSize: body?.p_page_size, scope: body?.p_scope }),
   increment_santri_points: (db, ctx, body) =>
     incrementSantriPoints(db, ctx, { santriId: body?.p_santri_id, amount: body?.p_amount }),
   change_santri_jilid: (db, ctx, body) =>
