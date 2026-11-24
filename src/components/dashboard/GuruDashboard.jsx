@@ -57,7 +57,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { SANTRI_JILID_OPTIONS, normalizeSantriJilid } from '@/lib/santriJilid';
 import { changeSantriJilid } from '@/lib/santriJilidAdapters';
 
-const ProfileConstellationScene = lazy(() => import('@/components/dashboard/santri/SantriLevelScene'));
+import ProfileConstellationScene from '@/components/dashboard/santri/SafeLevelScene';
+
 const AttentionPanel = lazy(() => import('@/components/dashboard/assistant/AttentionPanel'));
 const AiWorkspace = lazy(() => import('@/components/dashboard/assistant/AiWorkspace'));
 
@@ -567,7 +568,7 @@ const GuruDashboard = () => {
         </div>
         {guruData && (
           <section className="relative mb-8 overflow-hidden rounded-2xl border border-white/80 bg-slate-100 text-slate-900 shadow-[14px_14px_32px_rgba(15,23,42,0.16),-12px_-12px_28px_rgba(255,255,255,0.92)] dark:border-white/10 dark:bg-slate-950 dark:text-white dark:shadow-[14px_14px_32px_rgba(0,0,0,0.5),-10px_-10px_26px_rgba(30,41,59,0.3)]">
-            <Suspense fallback={null}><ProfileConstellationScene accentColor={isFemale ? '#14b8a6' : '#3b82f6'} points={myClasses.length * 7} /></Suspense>
+            <ProfileConstellationScene accentColor={isFemale ? '#14b8a6' : '#3b82f6'} points={myClasses.length * 7} />
             <div className={cn('absolute inset-x-0 top-0 z-10 h-1 bg-gradient-to-r', isFemale ? 'from-cyan-400 via-teal-400 to-violet-400' : 'from-cyan-500 via-blue-500 to-violet-500')} />
             <div className="relative z-10 grid gap-7 p-6 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:p-8">
               <div className="mx-auto rounded-full bg-slate-100 p-2 shadow-[inset_5px_5px_12px_rgba(15,23,42,0.12),inset_-5px_-5px_12px_rgba(255,255,255,0.9)] dark:bg-slate-900 dark:shadow-[inset_5px_5px_12px_rgba(0,0,0,0.45),inset_-5px_-5px_12px_rgba(51,65,85,0.28)] md:mx-0">
